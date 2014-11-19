@@ -2,13 +2,15 @@ Version: 2
 
 Application:
   ?:
-    type: io.murano.apps.docker.DockerJenkins
+    type: io.murano.apps.docker.DockerCrate
   name: $.appConfiguration.name
 
   docker: $.appConfiguration.docker
 
-  image: jenkins
-  port: %PORT%
+  image: crate
+  port4200: 4200
+  port4300: 4300
+
 
 
 Forms:
@@ -17,7 +19,7 @@ Forms:
         - name: name
           type: string
           label: Application Name
-          initial: 'DockerJenkins'
+          initial: 'DockerCrate'
           description: >-
             Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
             underline are allowed
