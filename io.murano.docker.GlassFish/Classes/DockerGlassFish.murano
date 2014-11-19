@@ -5,7 +5,7 @@ Namespaces:
   apps: io.murano.apps
   tc: io.murano.apps.apache
 
-Name: Docker%APP%
+Name: DockerGlassFish
 
 Extends: std:Application
 
@@ -16,7 +16,13 @@ Properties:
     Contract: $.class('io.murano.apps.docker.DockerService').notNull()
   image:
     Contract: $.string().notNull()
-  port:
+  password:
+    Contract: $.string().notNull()
+  portAdmin:
+    Contract: $.int()
+  portHTTP:
+    Contract: $.int()
+  portHTTPS:
     Contract: $.int()
   bindings:
     Contract: [$.int()]
@@ -35,17 +41,29 @@ Workflow:
           - $.environment.reporter.report($this, 'Checking for Docker Service availability')
           - $.docker.deploy()
           - $.environment.reporter.report($this, 'Installing Application')
+          - $ports:
+            - $.portAdmin
+            - $.portHTTP
+            - $.portHTTPS
           - $env:
-            - format('APPLICATION={0}', $.name)
+            - format('GLASSFISH_PASS={0}', $.password)
           - $my_assigned_port: $.docker.addApplication(
               docker_image => $.image,
               docker_env => $env,
-              app_port => [$.port],
-              build => false
+              app_port => $ports,
+              build => true
               )
           - $.bindings: $my_assigned_ports
-          - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
+          - $.environment.reporter.report($this, 'GlassFish HTTP port at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$.port]
+              $my_assigned_ports[$.portHTTP]
+              ))
+          - $.environment.reporter.report($this, 'GlassFish HTTPS port at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$.portHTTPS]
+              ))
+          - $.environment.reporter.report($this, 'GlassFish Admin interface at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$.portAdmin]
               ))
           - $.setAttr(deployed, true)

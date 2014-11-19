@@ -1,0 +1,10 @@
+Format: 1.0
+Type: Application
+FullName: io.murano.apps.docker.DockerGlassFish
+Name: Docker GlassFish
+Description: |
+ Tutum Docker Application for GlassFish.
+Author: 'Mirantis, Inc'
+Tags: [docker, application, GlassFish]
+Classes:
+ io.murano.apps.docker.DockerGlassFish: DockerGlassFish.murano

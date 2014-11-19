@@ -2,13 +2,16 @@ Version: 2
 
 Application:
   ?:
-    type: io.murano.apps.docker.DockerJenkins
+    type: io.murano.apps.docker.DockerGlassFish
   name: $.appConfiguration.name
 
   docker: $.appConfiguration.docker
 
-  image: jenkins
-  port: %PORT%
+  image: tutum/glassfish
+  portAdmin: 4848
+  portHTTP: 8080
+  portHTTPS: 8181
+  password: $.appConfiguration.password
 
 
 Forms:
@@ -17,10 +20,17 @@ Forms:
         - name: name
           type: string
           label: Application Name
-          initial: 'DockerJenkins'
+          initial: 'DockerGlassFish'
           description: >-
             Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
             underline are allowed
+
+        - name: password
+          type: password
+          label: Glassfish admin password
+          required: true
+          description: >-
+            Password for admin user in GlassFish
 
         - name: docker
           type: io.murano.apps.docker.DockerSingleVMServer
