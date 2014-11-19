@@ -53,13 +53,16 @@ Workflow:
           Contract: []
         docker_port_bindings:
           Contract: {}
+        docker_volumes:
+          Contract: {}
       Body:
         - $.cast('io.murano.apps.docker.DockerServer').addDockerApp(
             instance => $instance,
             docker_image => $docker_image,
             docker_env => $docker_env,
             docker_app_ports => $docker_app_ports,
-            docker_port_bindings => $docker_port_bindings
+            docker_port_bindings => $docker_port_bindings,
+            docker_volumes => $docker_volumes
             )
 
   addApplication:
@@ -70,6 +73,8 @@ Workflow:
             Contract: [$.string()]
           app_ports:
             Contract: [$.int()]
+          app_volume:
+            Contract: {}
         Body:
          - $.pullImage(instance => $.instance, image => $docker_image)
          - $portBindings: {}
@@ -77,15 +82,16 @@ Workflow:
          - For: port
            In: $app_ports
            Do:
+             - $strport: str($port)
              - $allocatedPort: $.allocatePort()
-             - $portBindings[$port]:
+             - $portBindings[$strport]:
                  'HostPort': $allocatedPort
                  'HostIP': '0.0.0.0'
              - $rule:
                  ToPort: $allocatedPort
                  FromPort: $allocatedPort
                  IpProtocol: 'tcp'
-                 External: True
+                 External: true
              - $securityGroupIngress: $securityGroupIngress + list($rule)
 
          - $.environment.securityGroupManager.addGroupIngress($securityGroupIngress)
@@ -94,7 +100,8 @@ Workflow:
               docker_image => $docker_image,
               docker_env => $docker_env,
               docker_app_ports => $app_ports,
-              docker_port_bindings => $portBindings
+              docker_port_bindings => $portBindings,
+              docker_volumes => $app_volume
              )
          - Return: dict($portBindings.select($ => $portBindings[$].HostPort))
 
