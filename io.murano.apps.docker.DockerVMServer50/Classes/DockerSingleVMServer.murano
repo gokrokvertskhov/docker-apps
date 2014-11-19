@@ -68,34 +68,36 @@ Workflow:
             Contract: $.string().notNull()
           docker_env:
             Contract: [$.string()]
-          app_port:
-            Contract: $.int()
+          app_ports:
+            Contract: [$.int()]
         Body:
-         - $.pullImage(instance => $.instance,
-               image => $docker_image
-             )
-         - $alloc_port: $.allocatePort($app_port)
-         - $port_spec:
-            - $app_port.int()
-         - $port_binding:
-             $app_port:
-               'HostPort': $alloc_port
-               'HostIP': '0.0.0.0'
-         - $securityGroupIngress:
-             - ToPort: $alloc_port
-               FromPort: $alloc_port
-               IpProtocol: 'tcp'
-               External: True
-         - $.environment.securityGroupManager.addGroupIngress($securityGroupIngress)
+         - $.pullImage(instance => $.instance, image => $docker_image)
+         - $portBindings: {}
+         - $securityGroupIngress: []
+         - For: port
+           In: $app_ports
+           Do:
+             - $allocatedPort: $.allocatePort()
+             - $portBindings[$port]:
+                 'HostPort': $allocatedPort
+                 'HostIP': '0.0.0.0'
+             - $rule:
+                 ToPort: $allocatedPort
+                 FromPort: $allocatedPort
+                 IpProtocol: 'tcp'
+                 External: True
+             - $securityGroupIngress: $securityGroupIngress + list($rule)
 
+         - $.environment.securityGroupManager.addGroupIngress($securityGroupIngress)
          - $.addDockerApp(
               instance => $.instance,
               docker_image => $docker_image,
               docker_env => $docker_env,
-              docker_app_ports => $port_spec,
-              docker_port_bindings => $port_binding
+              docker_app_ports => $app_ports,
+              docker_port_bindings => $portBindings
              )
-         - Return: $alloc_port
+         - Return: dict($portBindings.select($ => $portBindings[$].HostPort))
+
   pullImage:
       Arguments:
         instance:
@@ -109,9 +111,6 @@ Workflow:
            )
 
   allocatePort:
-    Arguments:
-      port:
-        Contract: $.int().notNull()
     Body:
       - $.last_port: $.last_port + 1
       - Return: $.last_port
