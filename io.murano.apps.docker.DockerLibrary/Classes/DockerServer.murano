@@ -1,0 +1,101 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  res: io.murano.resources
+  sys: io.murano.system
+  apps: io.murano.apps
+
+
+Name: DockerServer
+
+Extends: DockerService
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  lastContainerNumber:
+    Contract: $.int()
+    Defaut: 0
+    Usage: InOut
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(secGroupConfigured, false)
+        Then:
+          - $.environment.reporter.report($this, 'Setup Security Groups for Docker Server')
+          - $securityGroupIngress:
+              - ToPort: 22
+                FromPort: 22
+                IpProtocol: 'tcp'
+                External: True
+              - ToPort: 2375
+                FromPort: 2375
+                IpProtocol: 'tcp'
+                External: True
+          - $.lastContainerNumber: 0
+          - $.environment.securityGroupManager.addGroupIngress($securityGroupIngress)
+          - $.setAttr(secGroupConfigured, True)
+
+  addDockerApp:
+    Arguments:
+      instance:
+        Contract: $.class(res:Instance).notNull()
+      docker_image:
+        Contract: $.string().notNull()
+      docker_env:
+        Contract: [$.string()]
+      docker_app_ports:
+        Contract: []
+      docker_port_bindings:
+        Contract: {}
+
+
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - $resources: new(sys:Resources)
+      - $.environment.reporter.report($this, 'Adding Docker Application')
+      - $.lastContainerNumber: $.lastContainerNumber + 1
+      - $name: format('{0}-{1}',$.name,$.lastContainerNumber)
+      - $template: $resources.yaml('docker_app.hot').bind(dict(
+          docker_app_name => $name,
+          docker_server => $instance.floatingIpAddress,
+          docker_image => $docker_image,
+          docker_env => $docker_env,
+          docker_app_ports => $docker_app_ports,
+          docker_port_bindings => $docker_port_bindings
+           ))
+      - $.environment.stack.updateTemplate($template)
+      - $.environment.stack.push()
+
+  addDockerServer:
+    Arguments:
+      instance:
+        Contract: $.class(res:Instance).notNull()
+    Body:
+      - $.environment.reporter.report($this, 'Setting Up Docker Server')
+      - $resources: new(sys:Resources)
+      - $template: $resources.yaml('DeployDocker.template')
+      - $instance.agent.call($template, $resources)
+      - $.environment.reporter.report($this, 'Docker Server is up and running')
+
+  pullImage:
+    Arguments:
+      instance:
+        Contract: $.class(res:Instance).notNull()
+      image:
+        Contract: $.string().notNull()
+    Body:
+      - $.environment.reporter.report($this, 'Pulling image {0}'.format($image))
+      - $resources: new(sys:Resources)
+      - $template: $resources.yaml('PullImage.template').bind(dict(
+          image => $image
+         ))
+      - $instance.agent.call($template, $resources)
+      - $.environment.reporter.report($this, 'Image saved')
+
