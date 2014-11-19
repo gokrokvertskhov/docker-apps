@@ -1,0 +1,69 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  sys: io.murano.system
+  apps: io.murano.apps
+  tc: io.murano.apps.apache
+
+Name: DockerGlassFish
+
+Extends: std:Application
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  docker:
+    Contract: $.class('io.murano.apps.docker.DockerService').notNull()
+  image:
+    Contract: $.string().notNull()
+  password:
+    Contract: $.string().notNull()
+  portAdmin:
+    Contract: $.int()
+  portHTTP:
+    Contract: $.int()
+  portHTTPS:
+    Contract: $.int()
+  bindings:
+    Contract: [$.int()]
+    Usage: Out
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.environment.reporter.report($this, 'Checking for Docker Service availability')
+          - $.docker.deploy()
+          - $.environment.reporter.report($this, 'Installing Application')
+          - $ports:
+            - $.portAdmin
+            - $.portHTTP
+            - $.portHTTPS
+          - $env:
+            - format('GLASSFISH_PASS={0}', $.password)
+          - $my_assigned_port: $.docker.addApplication(
+              docker_image => $.image,
+              docker_env => $env,
+              app_port => $ports,
+              build => true
+              )
+          - $.bindings: $my_assigned_ports
+          - $.environment.reporter.report($this, 'GlassFish HTTP port at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$.portHTTP]
+              ))
+          - $.environment.reporter.report($this, 'GlassFish HTTPS port at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$.portHTTPS]
+              ))
+          - $.environment.reporter.report($this, 'GlassFish Admin interface at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$.portAdmin]
+              ))
+          - $.setAttr(deployed, true)
