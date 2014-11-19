@@ -1,0 +1,54 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  sys: io.murano.system
+  apps: io.murano.apps
+  tc: io.murano.apps.apache
+
+Name: DockerApp
+
+Extends: std:Application
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  docker:
+    Contract: $.class('io.murano.apps.docker.DockerService').notNull()
+  image:
+    Contract: $.string().notNull()
+  #Coma separated list of ports
+  port:
+    Contract: $.int().notNull()
+  bindings:
+    Contract: $.int()
+    Usage: Out
+  #Coma separated list of ENV KEY=VALUE
+  env:
+    Contract: $.string().notNull()
+
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.environment.reporter.report($this, 'Checking for Docker Service availability')
+          - $.docker.deploy()
+          - $.environment.reporter.report($this, 'Installing Application')
+          - $env: $.env.split(',')
+          - $my_assigned_port: $.docker.addApplication(
+              docker_image => $.image,
+              docker_env => $env,
+              app_port => $.port
+              )
+          - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_port
+              ))
+          - $.bindings: $my_assigned_port
+          - $.setAttr(deployed, true)

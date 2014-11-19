@@ -1,0 +1,61 @@
+Version: 2
+
+Application:
+  ?:
+    type: io.murano.apps.docker.DockerApp
+  name: $.appConfiguration.name
+
+  docker: $.appConfiguration.docker
+
+  image: $.appConfig.image
+  port: $.appConfig.port
+  env: $.appConfig.env
+
+
+Forms:
+  - appConfiguration:
+      fields:
+        - name: name
+          type: string
+          label: Application Entity Name
+          initial: 'MyDockerApp'
+          description: >-
+            Enter a desired name for your dockerized application. This name is used as a display name in a Murano environment.
+            Just A-Z, a-z, 0-9, dash and underline are allowed
+
+        - name: docker
+          type: io.murano.apps.docker.DockerSingleVMServer
+          label: Container Service
+          description: >-
+            Select an instance of Docker container to run the app or add a new one by clicking plus button.
+
+  - appConfig:
+      fields:
+        - name: title
+          type: string
+          required: false
+          hidden: true
+          descriptionTitle: Docker Container Configuration
+          description: Specify the properties of the Docker application
+        - name: image
+          type: string
+          label: Docker image name from Docker registry
+          initial: mysql
+          description: >-
+            Please, provide an image name. You can use official Docker image names like mysql or mongo, or you can use a specific
+            repository name like "dockerfile/mongodb".
+        - name: port
+          type: integer
+          initial: 3360
+          label: Port
+          description: >-
+            Please, provide an application port. This information could be found in a Dockerfile like EXPORT 27017
+
+        - name: env
+          type: string
+          initial: 'Key=Value'
+          label: Docker Environment variables
+          description: >-
+            Please, provide application environment variables as a comma separated list. Some Docker applications require
+            to have specific environment variables. Please check corresponding application web page.
+
