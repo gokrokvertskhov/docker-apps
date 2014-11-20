@@ -25,7 +25,7 @@ Properties:
   portHTTPS:
     Contract: $.int()
   bindings:
-    Contract: [$.int()]
+    Contract: {}
     Usage: Out
 
 Workflow:
@@ -47,23 +47,24 @@ Workflow:
             - $.portHTTPS
           - $env:
             - format('GLASSFISH_PASS={0}', $.password)
+          - $volumes: {}
           - $my_assigned_port: $.docker.addApplication(
               docker_image => $.image,
               docker_env => $env,
               app_port => $ports,
-              build => true
+              app_volume => $volumes
               )
           - $.bindings: $my_assigned_ports
           - $.environment.reporter.report($this, 'GlassFish HTTP port at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$.portHTTP]
+              $my_assigned_ports['8080'].HostPort
               ))
           - $.environment.reporter.report($this, 'GlassFish HTTPS port at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$.portHTTPS]
+              $my_assigned_ports['8181'].HostPort
               ))
           - $.environment.reporter.report($this, 'GlassFish Admin interface at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$.portAdmin]
+              $my_assigned_ports['4848'].HostPort
               ))
           - $.setAttr(deployed, true)
