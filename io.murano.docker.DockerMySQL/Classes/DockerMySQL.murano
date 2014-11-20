@@ -21,7 +21,7 @@ Properties:
   password:
     Contract: $.string().notNull()
   bindings:
-    Contract: $.int()
+    Contract: {}
     Usage: Out
 
 Workflow:
@@ -39,10 +39,18 @@ Workflow:
           - $.environment.reporter.report($this, 'Installing Application')
           - $env:
             - format('MYSQL_ROOT_PASSWORD={0}', $.password)
-          - $my_assigned_port: $.docker.addApplication(docker_image => $.image, docker_env => $env,app_port => $.port)
-          - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
+          - $volumes: {}
+          - $ports:
+            - $.port
+          - $my_assigned_port: $.docker.addApplication(
+             docker_image => $.image,
+             docker_env => $env,
+             app_port => $ports,
+             app_volume => $volumes
+             )
+          - $.environment.reporter.report($this, 'Application mysql is listening on {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_port
+              $my_assigned_port['3306'].HostPort
               ))
           - $.bindings: $my_assigned_port
           - $.setAttr(deployed, true)
