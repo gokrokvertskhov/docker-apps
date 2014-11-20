@@ -19,7 +19,7 @@ Properties:
   port:
     Contract: $.int()
   bindings:
-    Contract: [$.int()]
+    Contract: {}
     Usage: Out
 
 Workflow:
@@ -37,15 +37,19 @@ Workflow:
           - $.environment.reporter.report($this, 'Installing Application')
           - $env:
             - format('APPLICATION={0}', $.name)
+          - $ports:
+            - $.port
+          - $volumes: {}
           - $my_assigned_port: $.docker.addApplication(
               docker_image => $.image,
               docker_env => $env,
-              app_port => [$.port],
-              build => false
+              app_port => $ports,
+              app_volume => $volumes
               )
           - $.bindings: $my_assigned_ports
+          - $port: str($.port)
           - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$.port]
+              $my_assigned_ports[$port].HostPort
               ))
           - $.setAttr(deployed, true)
