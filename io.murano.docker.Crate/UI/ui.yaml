@@ -25,7 +25,7 @@ Forms:
             underline are allowed
 
         - name: docker
-          type: io.murano.apps.docker.DockerSingleVMServer
+          type: io.murano.apps.docker.DockerSingleVMServer50
           label: Container Service
           description: >-
             Select an instance of Docker contaniner to run the app
