@@ -19,7 +19,7 @@ Properties:
   port:
     Contract: $.int()
   bindings:
-    Contract: $.int()
+    Contract: {}
     Usage: Out
 
 Workflow:
@@ -35,17 +35,20 @@ Workflow:
           - $.environment.reporter.report($this, 'Checking for Docker Service availability')
           - $.docker.deploy()
           - $.environment.reporter.report($this, 'Installing Application')
+          - $ports:
+            - $.port
+          - $volumes: {}
           - $env:
             - format('APPLICATION={0}', $.name)
           - $my_assigned_port: $.docker.addApplication(
               docker_image => $.image,
               docker_env => $env,
-              app_port => $.port
+              app_port => $ports,
+              app_volume => $volumes
               )
-          - $.environment.reporter.report($this, 'Application deployed')
           - $.bindings: $my_assigned_port
-          - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
+          - $.environment.reporter.report($this, 'Application Ngnix listening at {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_port
+              $my_assigned_port['80'].HostPort
               ))
           - $.setAttr(deployed, true)
