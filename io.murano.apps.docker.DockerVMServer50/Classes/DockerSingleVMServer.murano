@@ -77,24 +77,7 @@ Workflow:
             Contract: {}
         Body:
          - $.pullImage(instance => $.instance, image => $docker_image)
-         - $portBindings: {}
-         - $securityGroupIngress: []
-         - For: port
-           In: $app_ports
-           Do:
-             - $strport: str($port)
-             - $allocatedPort: $.allocatePort()
-             - $portBindings[$strport]:
-                 'HostPort': $allocatedPort
-                 'HostIP': '0.0.0.0'
-             - $rule:
-                 ToPort: $allocatedPort
-                 FromPort: $allocatedPort
-                 IpProtocol: 'tcp'
-                 External: true
-             - $securityGroupIngress: $securityGroupIngress + list($rule)
-
-         - $.environment.securityGroupManager.addGroupIngress($securityGroupIngress)
+         - $portBindings: dict().patch(list($app_ports.select(dict(op => add, path => format('/{0}', $), value => dict(HostIP => '0.0.0.0', HostPort => $this.allocatePort())))))
          - $.addDockerApp(
               instance => $.instance,
               docker_image => $docker_image,
@@ -103,7 +86,7 @@ Workflow:
               docker_port_bindings => $portBindings,
               docker_volumes => $app_volume
              )
-         - Return: dict($portBindings.select($ => $portBindings[$].HostPort))
+         - Return: $portBindings
 
   pullImage:
       Arguments:
@@ -120,4 +103,10 @@ Workflow:
   allocatePort:
     Body:
       - $.last_port: $.last_port + 1
+      - $rule:
+         ToPort: $.last_port
+         FromPort: $.last_port
+         IpProtocol: 'tcp'
+         External: True
+      - $.environment.securityGroupManager.addGroupIngress($rule)
       - Return: $.last_port
