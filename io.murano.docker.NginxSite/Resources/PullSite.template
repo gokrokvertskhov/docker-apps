@@ -1,0 +1,19 @@
+FormatVersion: 2.0.0
+Version: 1.0.0
+Name: Pull Image
+
+Parameters:
+  url: $url
+  id: $id
+
+Body: |
+  return pull_site('{0} {1}'.format(args.url, args.id)).stdout
+
+Scripts:
+  pull_site:
+    Type: Application
+    Version: 1.0.0
+    EntryPoint: pull_site.sh
+    Options:
+      captureStdout: true
+      captureStderr: true

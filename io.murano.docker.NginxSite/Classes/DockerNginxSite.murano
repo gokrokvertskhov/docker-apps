@@ -1,0 +1,66 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  sys: io.murano.system
+  apps: io.murano.apps
+  tc: io.murano.apps.apache
+
+Name: DockerNginxSite
+
+Extends: std:Application
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  docker:
+    Contract: $.class('io.murano.apps.docker.DockerService').notNull()
+  image:
+    Contract: $.string().notNull()
+  url:
+    Contract: $.string().notNull()
+  port:
+    Contract: $.int()
+  bindings:
+    Contract: {}
+    Usage: Out
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.environment.reporter.report($this, 'Checking for Docker Service availability')
+          - $.docker.deploy()
+          - $.environment.reporter.report($this, 'Installing Application')
+          - $env:
+            - format('APPLICATION={0}', $.name)
+          - $resources: new(sys:Resources)
+          - $template: $resources.yaml('PullSite.template').bind(dict(
+             url => $.url,
+             id => id($)
+             ))
+          - $result: $.docker.instance.agent.call($template, $resources)
+          - $volumes: {}
+          - $vol: format('/var/tmp/{0}/{1}', id($),'example-web')
+          - $volumes[$vol]: '/usr/share/nginx/html'
+          - $ports:
+            - $.port
+          - $my_assigned_port: $.docker.addApplication(
+              docker_image => $.image,
+              docker_env => $env,
+              app_ports => $ports,
+              app_volume => $volumes
+              )
+          - $.environment.reporter.report($this, 'Application deployed')
+          - $.bindings: $my_assigned_port
+          - $port: str($.port)
+          - $.environment.reporter.report($this, 'Application deployed at {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_port[$port]['HostPort']
+              ))
+          - $.setAttr(deployed, true)

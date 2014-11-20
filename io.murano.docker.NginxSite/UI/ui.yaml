@@ -1,0 +1,37 @@
+Version: 2
+
+Application:
+  ?:
+    type: io.murano.apps.docker.DockerNginxSite
+  name: $.appConfiguration.name
+
+  docker: $.appConfiguration.docker
+
+  image: nginx
+  port: 80
+  url: $.appConfiguration.url
+
+
+Forms:
+  - appConfiguration:
+      fields:
+        - name: name
+          type: string
+          label: Application Name
+          initial: 'DockerNginx'
+          description: >-
+            Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
+            underline are allowed
+        - name: url
+          type: string
+          label: Application Name
+          initial: 'http://github.com/???'
+          description: >-
+            Enter an URL to git repository with site content.
+
+        - name: docker
+          type: io.murano.apps.docker.DockerSingleVMServer50
+          label: Container Service
+          description: >-
+            Select an instance of Docker contaniner to run the app
+
