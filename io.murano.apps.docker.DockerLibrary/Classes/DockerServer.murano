@@ -54,6 +54,8 @@ Workflow:
         Contract: []
       docker_port_bindings:
         Contract: {}
+      docker_volumes:
+        Contract: {}
 
 
     Body:
@@ -68,7 +70,8 @@ Workflow:
           docker_image => $docker_image,
           docker_env => $docker_env,
           docker_app_ports => $docker_app_ports,
-          docker_port_bindings => $docker_port_bindings
+          docker_port_bindings => $docker_port_bindings,
+          docker_volumes => $docker_volumes
            ))
       - $.environment.stack.updateTemplate($template)
       - $.environment.stack.push()
@@ -91,6 +94,7 @@ Workflow:
       image:
         Contract: $.string().notNull()
     Body:
+      - $.environment: $.find(std:Environment).require()
       - $.environment.reporter.report($this, 'Pulling image {0}'.format($image))
       - $resources: new(sys:Resources)
       - $template: $resources.yaml('PullImage.template').bind(dict(

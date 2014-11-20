@@ -10,3 +10,5 @@ Resources:
         $docker_app_ports
       port_bindings:
         $docker_port_bindings
+      volumes:
+        $docker_volumes
