@@ -1,0 +1,65 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  sys: io.murano.system
+  apps: io.murano.apps
+  tc: io.murano.apps.apache
+
+Name: DockerInfluxDB
+
+Extends: std:Application
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  docker:
+    Contract: $.class('io.murano.apps.docker.DockerService').notNull()
+  image:
+    Contract: $.string().notNull()
+  port:
+    Contract: $.int()
+  portAPI:
+    Contract: $.int()
+  preCreateDB:
+    Contract: $.string()
+  bindings:
+    Contract: {}
+    Usage: Out
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.environment.reporter.report($this, 'Checking for Docker Service availability')
+          - $.docker.deploy()
+          - $.environment.reporter.report($this, 'Installing Application')
+          - $env:
+            - format('PRE_CREATE_DB={0}', $.preCreateDB)
+          - $ports:
+            - $.port
+            - $.portAPI
+          - $volumes: {}
+          - $my_assigned_port: $.docker.addApplication(
+              docker_image => $.image,
+              docker_env => $env,
+              app_port => $ports,
+              app_volume => $volumes
+              )
+          - $.bindings: $my_assigned_ports
+          - $port: str($.port)
+          - $.environment.reporter.report($this, 'Application InfluxDB available {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$port]
+              ))
+          - $portAPI: str($.portAPI)
+          - $.environment.reporter.report($this, 'Application InfluxDB REST API {0}:{1}'.format(
+              $.docker.public_ip,
+              $my_assigned_ports[$portAPI]
+              ))
+          - $.setAttr(deployed, true)

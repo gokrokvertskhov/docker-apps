@@ -1,0 +1,39 @@
+Version: 2
+
+Application:
+  ?:
+    type: io.murano.apps.docker.DockerInfluxDB
+  name: $.appConfiguration.name
+
+  docker: $.appConfiguration.docker
+
+  image: tutum/influxdb
+  port: 8083
+  portAPI: 8086
+  preCreateDB: $.appConfiguration.preCreateDB
+
+
+Forms:
+  - appConfiguration:
+      fields:
+        - name: name
+          type: string
+          label: Application Name
+          initial: 'DockerInfluxDB'
+          description: >-
+            Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
+            underline are allowed
+        - name: preCreateDB
+          type: string
+          label: DB list to pre-create
+          initial: 'db1;db2'
+          required: false
+          description: >-
+            Enter a semicolon separated list of databases. These databases will be pre-created on a container start.
+
+        - name: docker
+          type: io.murano.apps.docker.DockerSingleVMServer50
+          label: Container Service
+          description: >-
+            Select an instance of Docker contaniner to run the app
+
