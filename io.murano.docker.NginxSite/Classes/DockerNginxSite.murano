@@ -45,9 +45,9 @@ Workflow:
              id => id($)
              ))
           - $result: $.docker.instance.agent.call($template, $resources)
-          - $volumes: {}
           - $vol: format('/var/tmp/{0}/{1}', id($),'example-web')
-          - $volumes[$vol]: '/usr/share/nginx/html'
+          - $volumes:
+             '/usr/local/apache2/htdocs': $vol
           - $ports:
             - $.port
           - $my_assigned_port: $.docker.addApplication(

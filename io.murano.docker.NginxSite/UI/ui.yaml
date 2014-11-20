@@ -7,7 +7,7 @@ Application:
 
   docker: $.appConfiguration.docker
 
-  image: nginx
+  image: httpd
   port: 80
   url: $.appConfiguration.url
 
@@ -33,5 +33,5 @@ Forms:
           type: io.murano.apps.docker.DockerSingleVMServer50
           label: Container Service
           description: >-
-            Select an instance of Docker contaniner to run the app
+            Select an instance of Docker container to run the app
 
