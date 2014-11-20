@@ -1,0 +1,31 @@
+Version: 2
+
+Application:
+  ?:
+    type: io.murano.apps.docker.DockerPHPZendServer
+  name: $.appConfiguration.name
+
+  docker: $.appConfiguration.docker
+
+  image: zendserver
+  port: 88
+  portAdmin: 10088
+
+
+Forms:
+  - appConfiguration:
+      fields:
+        - name: name
+          type: string
+          label: Application Name
+          initial: 'DockerPHP-ZendServer'
+          description: >-
+            Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
+            underline are allowed
+
+        - name: docker
+          type: io.murano.apps.docker.DockerSingleVMServer50
+          label: Container Service
+          description: >-
+            Select an instance of Docker contaniner to run the app
+
