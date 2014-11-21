@@ -2,36 +2,34 @@ Version: 2
 
 Application:
   ?:
-    type: io.murano.apps.docker.DockerGlassFish
+    type: io.murano.apps.docker.DockerMariaDB
   name: $.appConfiguration.name
-
   docker: $.appConfiguration.docker
-
-  image: 'tutum/glassfish'
-  portAdmin: 4848
-  portHTTP: 8080
-  portHTTPS: 8181
+  image: 'tutum/mariadb'
+  port: 3306
   password: $.appConfiguration.password
-
 
 Forms:
   - appConfiguration:
       fields:
+        - name: title
+          type: string
+          required: false
+          hidden: true
+          descriptionTitle: Docker MariaDB Configuration
+          description: Specify the properties of the Docker application
         - name: name
           type: string
           label: Application Name
-          initial: 'DockerGlassFish'
+          initial: 'DockerMariaDB'
           description: >-
             Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
             underline are allowed
-
         - name: password
           type: password
-          label: Glassfish admin password
           required: true
-          description: >-
-            Password for admin user in GlassFish
-
+          label: MySQL Password
+          description: Password for root user in MySQL
         - name: docker
           type: io.murano.apps.docker.DockerSingleVMServer50
           label: Container Service

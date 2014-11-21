@@ -45,21 +45,20 @@ Workflow:
             - $.port
             - $.portAPI
           - $volumes: {}
-          - $my_assigned_port: $.docker.addApplication(
+          - $.bindingst: $.docker.addApplication(
               docker_image => $.image,
               docker_env => $env,
-              app_port => $ports,
+              app_ports => $ports,
               app_volume => $volumes
               )
-          - $.bindings: $my_assigned_ports
           - $port: str($.port)
           - $.environment.reporter.report($this, 'Application InfluxDB available {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$port]
+              $.bindingst.get($port)
               ))
-          - $portAPI: str($.portAPI)
+          - $portApi: str($.portAPI)
           - $.environment.reporter.report($this, 'Application InfluxDB REST API {0}:{1}'.format(
               $.docker.public_ip,
-              $my_assigned_ports[$portAPI]
+              $.bindingst.get($portApi)
               ))
           - $.setAttr(deployed, true)

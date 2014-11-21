@@ -77,16 +77,44 @@ Workflow:
             Contract: {}
         Body:
          - $.pullImage(instance => $.instance, image => $docker_image)
-         - $portBindings: dict().patch(list($app_ports.select(dict(op => add, path => format('/{0}', $), value => dict(HostIP => '0.0.0.0', HostPort => $this.allocatePort())))))
+         - $._portBindings: {}
+         - $._result: {}
+         - $._securityGroupIngress: []
+         - For: port
+           In: $app_ports
+           Do:
+              - $allocatedPort: $.allocatePort()
+              - $patch:
+                - op: add
+                  path: format('/{0}', $port)
+                  value:
+                    HostPort: $allocatedPort
+                    HostIP: '0.0.0.0'
+              - $patch2:
+                - op: add
+                  path: format('/{0}', $port)
+                  value: $allocatedPort
+              - $._portBindings: $._portBindings.patch($patch)
+              - $._result: $._result.patch($patch2)
+              - print($._result)
+              - $rule:
+                  ToPort: $allocatedPort
+                  FromPort: $allocatedPort
+                  IpProtocol: 'tcp'
+                  External: true
+              - $._securityGroupIngress: $._securityGroupIngress + list($rule)
+
+         - $.environment.securityGroupManager.addGroupIngress($._securityGroupIngress)
          - $.addDockerApp(
               instance => $.instance,
               docker_image => $docker_image,
               docker_env => $docker_env,
               docker_app_ports => $app_ports,
-              docker_port_bindings => $portBindings,
+              docker_port_bindings => $._portBindings,
               docker_volumes => $app_volume
              )
-         - Return: $portBindings
+         - Return: $._result
+
 
   pullImage:
       Arguments:
@@ -103,10 +131,4 @@ Workflow:
   allocatePort:
     Body:
       - $.last_port: $.last_port + 1
-      - $rule:
-         ToPort: $.last_port
-         FromPort: $.last_port
-         IpProtocol: 'tcp'
-         External: True
-      - $.environment.securityGroupManager.addGroupIngress($rule)
       - Return: $.last_port

@@ -7,7 +7,7 @@ Application:
 
   docker: $.appConfiguration.docker
 
-  image: tutum/influxdb
+  image: 'tutum/influxdb'
   port: 8083
   portAPI: 8086
   preCreateDB: $.appConfiguration.preCreateDB
@@ -23,6 +23,7 @@ Forms:
           description: >-
             Enter a desired name for the application. Just A-Z, a-z, 0-9, dash and
             underline are allowed
+
         - name: preCreateDB
           type: string
           label: DB list to pre-create
