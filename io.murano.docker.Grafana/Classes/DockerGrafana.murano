@@ -1,0 +1,78 @@
+Namespaces:
+  =: io.murano.apps.docker
+  std: io.murano
+  sys: io.murano.system
+  apps: io.murano.apps
+  tc: io.murano.apps.apache
+
+Name: DockerGrafana
+
+Extends: std:Application
+
+Properties:
+  name:
+    Contract: $.string().notNull()
+  docker:
+    Contract: $.class('io.murano.apps.docker.DockerService').notNull()
+  image:
+    Contract: $.string().notNull()
+  port:
+    Contract: $.int()
+  bindings:
+    Contract: {}
+    Usage: Out
+
+  # Grafana specific parameters
+
+  influxDB:
+    Contract: $.class('io.murano.apps.docker.DockerInfluxDB').notNull()
+
+  grafanaUser:
+    Contract: $.string().notNull()
+
+  grafanaPassword:
+    Contract: $.string().notNull()
+
+  dbName:
+    Contract: $.string().notNull()
+
+
+
+Workflow:
+  initialize:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $.environment: $.find(std:Environment).require()
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.environment.reporter.report($this, 'Checking for Docker Service availability')
+          - $.docker.deploy()
+          - $.influxDB.deploy()
+          - $.environment.reporter.report($this, 'Installing Application')
+          - $portApi: str($.influxDB.portAPI)
+          - $env:
+            - format('HTTP_USER={0}', $.grafanaUser)
+            - format('HTTP_PASS={0}', $.grafanaPassword)
+            - format('INFLUXDB_HOST={0}', $.influxDB.docker.public_ip)
+            - format('INFLUXDB_PORT={0}', $.influxDB.bindings.get($portAPI))
+            - format('INFLUXDB_NAME={0}', $.dbName)
+            - format('INFLUXDB_USER={0}', 'root')
+            - format('INFLUXDB_PASS={0}', 'root')
+          - $ports:
+            - $.port
+          - $volumes: {}
+          - $.bindings: $.docker.addApplication(
+              docker_image => $.image,
+              docker_env => $env,
+              app_ports => $ports,
+              app_volume => $volumes
+              )
+          - $port: str($.port)
+          - $.environment.reporter.report($this, 'Application Grafana available at {0}:{1}'.format(
+              $.docker.public_ip,
+              $.bindings.get($port)
+              ))
+          - $.setAttr(deployed, true)
